@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conteggio AI Tools da Screenshot</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      background: #23232b;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: #2d2d39;
+      border-radius: 20px;
+      padding: 2em 2em 1em 2em;
+      box-shadow: 0 0 30px #0008;
+      text-align: center;
+      max-width: 400px;
+      width: 90vw;
+    }
+    h1 {
+      margin-bottom: 0.5em;
+      font-size: 1.5em;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 1px 1px 8px #000a;
+    }
+    .big-number {
+      font-size: 3.5em;
+      color: #ffb300;
+      font-weight: 900;
+      margin: 0.7em 0 0.3em 0;
+      text-shadow: 2px 2px 8px #000a, 0 0 2px #fff8;
+      letter-spacing: 2px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: block;
+      text-align: center;
+    }
+    .apps-label {
+      font-size: 1.2em;
+      color: #ffb300;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-top: 0.1em;
+      margin-bottom: 0.18em;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: block;
+      text-align: center;
+    }
+    .in-ndays-label {
+      display: block;
+      color: #fff;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 32pt;
+      letter-spacing: 1px;
+      margin-top: 0.2em;
+      margin-bottom: 0.1em;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      line-height: 1.1;
+      text-align: center;
+    }
+    .ndays-number {
+      display: block;
+      color: #fff;
+      font-weight: 900;
+      font-size: 32pt;
+      margin-top: 0.1em;
+      margin-bottom: 0.1em;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .giorni-label {
+      display: block;
+      color: #ccc;
+      font-size: 32pt;
+      font-weight: 700;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin-bottom: 0.3em;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .media-label {
+      font-size: 2em;
+      color: #ffe066;
+      font-weight: 900;
+      margin: 0.5em 0 0.5em 0;
+      letter-spacing: 1px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .label {
+      color: #aaa;
+      font-size: 1em;
+      margin-bottom: 1em;
+    }
+    .cover {
+      margin-bottom: 1.5em;
+      border-radius: 18px;
+      max-width: 100%;
+      box-shadow: 0 4px 24px #0006;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #ocr-status {
+      color: #ff6a3d;
+      margin-bottom: 1em;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1em; }
+      h1 { font-size: 1.3em; }
+      .big-number { font-size: 1.5em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="cover" src="./ai-era-cover.png" alt="AI Era Cover">
+    <h1>AI Tools su theresanaiforthat.com</h1>
+    <input type="file" accept="image/*" id="imgInput" style="margin-bottom:1em;">
+    <div id="ocr-status"></div>
+    <img id="preview" class="cover" style="display:none; max-width: 80%; margin-bottom: 1em;">
+    <div class="big-number" id="napp-container">
+      <span id="napp">Carica uno screenshot</span>
+      <span class="apps-label" id="apps-label" style="display:none;">APP SVILUPPATE</span>
+      <span class="in-ndays-label" id="in-ndays-label" style="display:none;">IN</span>
+      <span class="ndays-number" id="ndays-number" style="display:none;"></span>
+      <span class="giorni-label" id="giorni-label" style="display:none;">GIORNI</span>
+    </div>
+    <div class="media-label" id="media-label" style="display:none;"></div>
+    <div class="label" id="days"></div>
+    <div class="label" id="media"></div>
+    <div style="margin-top:1em;">
+      <small>Ultimo aggiornamento: <span id="update"></span></small>
+    </div>
+  </div>
+  <script>
+    function daysSince(dateString) {
+      const start = new Date(dateString);
+      const now = new Date();
+      const diff = now - start;
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
+
+    function parseNAPP(text) {
+      // Normalizza il testo per evitare problemi di spazi e caratteri strani
+      text = text.replace(/\n/g, ' ').replace(/[\s]+/g, ' ');
+      // Cerca pattern tipo "35,008 AI tools" o simili, anche con errori OCR
+      const match = text.match(/([0-9][0-9., ]{2,})\s*A[1Iil\|][\s]*tools?/i);
+      if (match) {
+        return parseInt(match[1].replace(/[.,\s]/g, ''));
+      }
+      return null;
+    }
+
+    document.getElementById('imgInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const img = document.getElementById('preview');
+      img.src = URL.createObjectURL(file);
+      img.style.display = 'block';
+      document.getElementById('ocr-status').textContent = 'Analisi OCR in corso...';
+      document.getElementById('napp').textContent = 'Caricamento...';
+      document.getElementById('media').textContent = '';
+      // OCR
+      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+      document.getElementById('ocr-status').textContent = '';
+      const NAPP = parseNAPP(text);
+      const DAYS22 = daysSince('2022-11-30');
+      // Aggiorna UI
+      if (NAPP) {
+        document.getElementById('napp').textContent = NAPP.toLocaleString('it-IT');
+        document.getElementById('apps-label').style.display = '';
+        document.getElementById('in-ndays-label').style.display = '';
+        document.getElementById('ndays-number').style.display = '';
+        document.getElementById('ndays-number').textContent = DAYS22;
+        document.getElementById('giorni-label').style.display = '';
+        document.getElementById('media-label').style.display = '';
+        document.getElementById('media-label').textContent = `OVVERO UNA MEDIA DI: ${(NAPP/DAYS22).toFixed(2)} APP AL GIORNO`;
+        document.getElementById('days').style.display = 'none';
+        document.getElementById('media').style.display = 'none';
+      } else {
+        document.getElementById('napp').textContent = 'Errore nel riconoscimento';
+        document.getElementById('apps-label').style.display = 'none';
+        document.getElementById('in-ndays-label').style.display = 'none';
+        document.getElementById('ndays-number').style.display = 'none';
+        document.getElementById('giorni-label').style.display = 'none';
+        document.getElementById('media-label').style.display = 'none';
+        document.getElementById('days').style.display = '';
+        document.getElementById('media').style.display = '';
+      }
+      document.getElementById('update').textContent = new Date().toLocaleString('it-IT');
+    });
+  </script>
+</body>
+</html> 
