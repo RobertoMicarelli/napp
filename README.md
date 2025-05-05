@@ -6,4 +6,4 @@ https://theresanaiforthat.com/
 
 esattamente come questo creato il giorno 5 Maggio
 
-![Esempio Screenshot TAAFT](.Esempio%20Screenshot%20TAAFT.png)
+![Esempio Screenshot TAAFT](./main/Esempio%20Screenshot%20TAAFT.png)
